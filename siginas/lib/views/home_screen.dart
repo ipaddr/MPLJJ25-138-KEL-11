@@ -1,51 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:siginas/views/all_pending_registration.dart';
 import 'package:siginas/views/article_screen.dart';
-import 'package:siginas/views/reports/reports_admin.dart';
-import 'package:siginas/views/reports/reports_user.dart';
+// import 'package:siginas/views/reports/reports_admin.dart';
+// import 'package:siginas/views/reports/reports_user.dart';
+import 'package:siginas/widgets/navigation_bar.dart';
 
-class HomePage extends StatefulWidget {
+class HomeScreen extends StatefulWidget {
   final String role;
 
-  const HomePage({super.key, required this.role});
+  const HomeScreen({super.key, required this.role});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  void _onItemTapped(int index) {
+  void _handleNavigation(int index) {
     setState(() {
       _selectedIndex = index;
     });
 
-    // Implementasikan navigasi berdasarkan index
     switch (index) {
       case 0:
-        // Tetap di halaman Home (tidak perlu navigasi)
+        Navigator.pushReplacementNamed(context, '/HomeScreen');
         break;
       case 1:
         if (widget.role == 'admin') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ReportsAdmin()),
-          );
+          Navigator.pushReplacementNamed(context, '/ReportsAdmin');
         } else {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ReportsUser()),
-          );
+          Navigator.pushReplacementNamed(context, '/ReportsUser');
         }
         break;
       case 2:
-        // Navigasi ke halaman profil (ganti dengan halaman profil Anda)
-        // Contoh:
-        // Navigator.push(
-        //   context,
-        //   MaterialPageRoute(builder: (context) => ProfileScreen()),
-        // );
+        Navigator.pushReplacementNamed(context, '/ProfileScreen');
         break;
     }
   }
@@ -150,25 +139,11 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(
-                widget.role == 'admin' ? Icons.assessment : Icons.camera_alt),
-            label: widget.role == 'admin' ? 'Reports' : 'Camera',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profil',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blue, // Sesuaikan warna
-        onTap: _onItemTapped,
+      bottomNavigationBar: CustomBottomNavigationBar(
+        initialIndex: _selectedIndex,
+        role: widget.role,
+        onItemSelected: _handleNavigation,
+        currentIndex: 0,
       ),
     );
   }

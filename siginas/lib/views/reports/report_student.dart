@@ -137,6 +137,7 @@ class _ReportStudentState extends State<ReportStudent> {
                   print('Gambar Sebelum: $_gambarSebelumMakan');
                   print('Gambar Sesudah: $_gambarSesudahMakan');
                   print('Keterangan: ${_keteranganController.text}');
+                  Navigator.pop(context);
                   // Navigasi atau proses data lebih lanjut
                 },
                 style: ElevatedButton.styleFrom(

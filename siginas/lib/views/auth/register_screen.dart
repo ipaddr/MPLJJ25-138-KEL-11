@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:siginas/views/auth/login_page.dart';
 import '../../services/auth_service.dart';
+// import 'package:siginas/views/auth/login_screen.dart';
 
-class RegisterPage extends StatefulWidget {
-  const RegisterPage({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<RegisterPage> createState() => _RegisterPageState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final AuthService _authService = AuthService();
 
@@ -48,7 +48,7 @@ class _RegisterPageState extends State<RegisterPage> {
         );
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const LoginPage()),
+          MaterialPageRoute(builder: (context) => const RegisterScreen()),
         );
         // Navigator.pop(context); // Kembali ke halaman login setelah registrasi
       } else {

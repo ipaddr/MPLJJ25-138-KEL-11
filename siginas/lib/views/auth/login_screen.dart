@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:siginas/views/auth/register_page.dart';
-// import 'package:siginas/views/home_page.dart';
+// import 'package:siginas/views/auth/register_screen.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -147,7 +146,7 @@ class _LoginPageState extends State<LoginPage> {
                     const Text('Belum punya akun?'),
                     TextButton(
                       onPressed: () =>
-                          Navigator.pushNamed(context, '/RegisterPage'),
+                          Navigator.pushNamed(context, '/RegisterScreen'),
                       child: const Text('Daftar'),
                     ),
                   ],

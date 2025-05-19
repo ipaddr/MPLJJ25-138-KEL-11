@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 // import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:siginas/views/reports/report_student.dart';
+import 'package:siginas/widgets/navigation_bar.dart';
 
 class ReportsUser extends StatefulWidget {
-  const ReportsUser({super.key});
+  final String role;
+  const ReportsUser({super.key, required this.role});
 
   @override
   State<ReportsUser> createState() => _ReportsUserState();
@@ -17,6 +19,30 @@ class _ReportsUserState extends State<ReportsUser> {
     {'nama': 'Citra Dewi', 'nisn': '0051234569', 'sudahLapor': true},
     // Tambahkan data dummy siswa lainnya di sini
   ];
+
+  int _selectedIndex = 1;
+
+  void _handleNavigation(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    switch (index) {
+      case 0:
+        Navigator.pushNamed(context, '/HomeScreen');
+        break;
+      case 1:
+        if (widget.role == 'admin') {
+          Navigator.pushNamed(context, '/ReportsAdmin');
+        } else {
+          Navigator.pushNamed(context, '/ReportsUser');
+        }
+        break;
+      case 2:
+        Navigator.pushNamed(context, '/ProfileScreen');
+        break;
+    }
+  }
 
   // Widget untuk menampilkan status laporan
   Widget _buildReportStatus(bool sudahLapor) {
@@ -139,6 +165,11 @@ class _ReportsUserState extends State<ReportsUser> {
             child: _buildStudentList(),
           ),
         ],
+      ),
+      bottomNavigationBar: CustomBottomNavigationBar(
+        currentIndex: _selectedIndex,
+        role: 'user', // Atur role sebagai user di halaman ini
+        onItemSelected: _handleNavigation,
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

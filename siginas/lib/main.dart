@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:siginas/views/article_screen.dart';
-import 'package:siginas/views/auth/login_page.dart';
-import 'package:siginas/views/auth/register_page.dart';
-import 'package:siginas/views/home_page.dart';
+import 'package:siginas/views/auth/login_screen.dart';
+import 'package:siginas/views/auth/register_screen.dart';
+import 'package:siginas/views/home_screen.dart';
+import 'package:siginas/views/profile_screen.dart';
+import 'package:siginas/views/reports/reports_admin.dart';
+import 'package:siginas/views/reports/reports_user.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,13 +21,22 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'SiGiNas',
       theme: ThemeData(primarySwatch: Colors.red),
-      initialRoute: '/', // Halaman awal aplikasi
+      initialRoute: '/',
       routes: {
-        '/': (context) => const HomePage(
-              role: 'admin',
-            ),
+        '/': (context) => const HomeScreen(role: 'user'),
+        '/RegisterScreen': (context) => const RegisterScreen(),
+        '/LoginScreen': (context) => const LoginScreen(),
+        '/HomeScreen': (context) => const HomeScreen(role: 'user'),
+        '/ReportsAdmin': (context) => const ReportsAdmin(role: 'user'),
+        '/ReportsUser': (context) => const ReportsUser(role: 'user'),
+        '/ProfileScreen': (context) => const ProfileScreen(role: 'user'),
+      },
+    );
+  }
+}
 
-        // '/': (context) => const ArticleScreen(
+
+// '/': (context) => const ArticleScreen(
         //       role: 'admin',
         //       title: 'Panduan Gizi Seimbang untuk Anak Sekolah',
         //       authorDate: '2 jam yang lalu',
@@ -42,12 +53,3 @@ class MyApp extends StatelessWidget {
         //           '6. Ajak anak untuk berolahraga secara teratur.\n'
         //           '7. Konsultasikan dengan dokter atau ahli gizi untuk mendapatkan saran yang lebih spesifik.',
         //     ),
-        '/RegisterPage': (context) =>
-            const RegisterPage(), // Rute ke halaman register
-        '/HomePage': (context) => const HomePage(
-              role: 'admin',
-            ), // Ganti dengan HomePage() Anda
-      },
-    );
-  }
-}
