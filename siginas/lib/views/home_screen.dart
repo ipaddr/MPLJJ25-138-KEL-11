@@ -4,6 +4,7 @@ import 'package:siginas/views/article_screen.dart';
 // import 'package:siginas/views/reports/reports_admin.dart';
 // import 'package:siginas/views/reports/reports_user.dart';
 import 'package:siginas/widgets/navigation_bar.dart';
+import 'package:siginas/views/chatbot/chatbot_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String role;
@@ -78,16 +79,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SiGiNas'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {
-              // Navigasi ke halaman pengaturan
-            },
+  title: const Text('SiGiNas'),
+  actions: [
+    IconButton(
+      icon: const Icon(Icons.chat_bubble_outline),
+      tooltip: 'Chatbot',
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const ChatBotScreen(),
           ),
-        ],
-      ),
+        );
+      },
+    ),
+    IconButton(
+      icon: const Icon(Icons.settings_outlined),
+      onPressed: () {
+        // Navigasi ke halaman pengaturan
+      },
+    ),
+  ],
+),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
