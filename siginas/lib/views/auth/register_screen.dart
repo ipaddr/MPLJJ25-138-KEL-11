@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../services/auth_service.dart';
-// import 'package:siginas/views/auth/login_screen.dart';
+import 'package:siginas/services/auth_service.dart'; // Pastikan path ini benar
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -22,6 +21,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
+  bool _isLoading = false; // State untuk indikator loading
 
   void _togglePasswordVisibility() {
     setState(() {
@@ -31,32 +31,67 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
-      final errorMessage = await _authService.registerUser(
+      setState(() {
+        _isLoading = true; // Tampilkan loading
+      });
+
+      // Pastikan totalStudents adalah angka valid
+      final int? totalStudents =
+          int.tryParse(_totalStudentsController.text.trim());
+      if (totalStudents == null) {
+        _showSnackBar('Jumlah murid harus berupa angka valid.', isError: true);
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final String? errorMessage = await _authService.registerUser(
         schoolName: _schoolNameController.text.trim(),
         address: _addressController.text.trim(),
         npsn: _npsnController.text.trim(),
-        totalStudents: int.parse(_totalStudentsController.text.trim()),
+        totalStudents: totalStudents,
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
+      setState(() {
+        _isLoading = false; // Sembunyikan loading
+      });
+
       if (errorMessage == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(
-                  'Registrasi berhasil! Silakan menunggu konfirmasi dari admin.')),
+        _showSnackBar(
+          'Registrasi berhasil! Silakan menunggu konfirmasi dari admin.',
+          isError: false,
         );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const RegisterScreen()),
-        );
-        // Navigator.pop(context); // Kembali ke halaman login setelah registrasi
+        // Kembali ke halaman login setelah registrasi berhasil
+        // Navigator.pop(context) akan kembali ke halaman sebelumnya (LoginScreen)
+        Navigator.pop(context);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
-        );
+        _showSnackBar(errorMessage, isError: true);
       }
     }
+  }
+
+  // Fungsi pembantu untuk menampilkan SnackBar
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _schoolNameController.dispose();
+    _addressController.dispose();
+    _npsnController.dispose();
+    _totalStudentsController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -165,8 +200,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 24.0),
               ElevatedButton(
-                onPressed: _register,
-                child: const Text('Daftar'),
+                onPressed:
+                    _isLoading ? null : _register, // Disable saat loading
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  textStyle: const TextStyle(fontSize: 18.0),
+                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(
+                        color: Colors.white) // Indikator loading
+                    : const Text('Daftar'),
+              ),
+              const SizedBox(height: 16.0),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Sudah punya akun?'),
+                  TextButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () =>
+                            Navigator.pop(context), // Kembali ke LoginScreen
+                    child: const Text('Masuk'),
+                  ),
+                ],
               ),
             ],
           ),

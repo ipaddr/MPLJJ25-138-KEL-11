@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
+import 'package:siginas/services/auth_service.dart'; // Import AuthService Anda
 import 'package:siginas/views/auth/login_screen.dart';
 import 'package:siginas/views/auth/register_screen.dart';
-import 'package:siginas/views/home_screen.dart';
-import 'package:siginas/views/profile_screen.dart';
-import 'package:siginas/views/reports/reports_admin.dart';
-import 'package:siginas/views/reports/reports_user.dart';
+import 'package:siginas/views/main_app_navigator.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,36 +19,68 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'SiGiNas',
-      theme: ThemeData(primarySwatch: Colors.red),
-      initialRoute: '/',
+      theme: ThemeData(
+        primarySwatch: Colors.red,
+      ),
+      // AuthWrapper akan menangani navigasi awal berdasarkan status autentikasi
+      home:
+          const AuthWrapper(), // Pastikan ini tidak const jika AuthWrapper bukan const
       routes: {
-        '/': (context) => const HomeScreen(role: 'user'),
-        '/RegisterScreen': (context) => const RegisterScreen(),
-        '/LoginScreen': (context) => const LoginScreen(),
-        '/HomeScreen': (context) => const HomeScreen(role: 'user'),
-        '/ReportsAdmin': (context) => const ReportsAdmin(role: 'user'),
-        '/ReportsUser': (context) => const ReportsUser(role: 'user'),
-        '/ProfileScreen': (context) => const ProfileScreen(role: 'user'),
+        '/register': (context) => const RegisterScreen(),
+        // Anda mungkin perlu menambahkan rute lain yang diakses via Navigator.pushNamed
+        // E.g., jika Anda memiliki tombol 'Kembali ke Login' di RegisterScreen
+        // '/login': (context) => const LoginScreen(),
       },
     );
   }
 }
 
+// Widget pembungkus untuk menangani logika autentikasi
+class AuthWrapper extends StatefulWidget {
+  const AuthWrapper({super.key});
 
-// '/': (context) => const ArticleScreen(
-        //       role: 'admin',
-        //       title: 'Panduan Gizi Seimbang untuk Anak Sekolah',
-        //       authorDate: '2 jam yang lalu',
-        //       imageUrl:
-        //           'https://www.gstatic.com/flutter-onestack-prototype/genui/example_1.jpg',
-        //       readTime: '5 menit baca',
-        //       content:
-        //           'Gizi yang baik sangat penting untuk pertumbuhan dan perkembangan anak. Berikut adalah 7 cara meningkatkan gizi anak:\n\n'
-        //           '1. Berikan makanan bergizi seimbang setiap hari.\n'
-        //           '2. Pastikan anak mendapatkan cukup protein, karbohidrat, dan lemak.\n'
-        //           '3. Berikan buah-buahan dan sayuran setiap hari.\n'
-        //           '4. Batasi makanan olahan dan minuman manis.\n'
-        //           '5. Berikan suplemen vitamin dan mineral jika diperlukan.\n'
-        //           '6. Ajak anak untuk berolahraga secara teratur.\n'
-        //           '7. Konsultasikan dengan dokter atau ahli gizi untuk mendapatkan saran yang lebih spesifik.',
-        //     ),
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  late Stream<User?> _authStateChangesStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _authStateChangesStream = AuthService().authStateChanges;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: _authStateChangesStream,
+      builder: (context, snapshot) {
+        // ... (logging dan penanganan loading/error seperti sebelumnya)
+
+        final User? user = snapshot.data;
+
+        if (user == null) {
+          return const LoginScreen();
+        } else {
+          return FutureBuilder<String?>(
+            future: AuthService().getUserRole(user.uid),
+            builder: (context, roleSnapshot) {
+              // ... (logging dan penanganan loading/error seperti sebelumnya)
+
+              if (roleSnapshot.hasError || roleSnapshot.data == null) {
+                // AuthService().signOut();
+                return const LoginScreen();
+              }
+
+              final String userRole = roleSnapshot.data!;
+              // Mengembalikan MainAppNavigator dengan role
+              return MainAppNavigator(role: userRole);
+            },
+          );
+        }
+      },
+    );
+  }
+}

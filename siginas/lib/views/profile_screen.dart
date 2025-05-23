@@ -1,37 +1,36 @@
 import 'package:flutter/material.dart';
-// import 'package:siginas/views/reports/reports_admin.dart';
-// import 'package:siginas/views/reports/reports_user.dart';
-import 'package:siginas/widgets/navigation_bar.dart';
+import 'package:siginas/services/auth_service.dart';
+import 'package:siginas/views/auth/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String role;
   const ProfileScreen({super.key, required this.role});
+
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  int _selectedIndex = 2;
+  Future<void> _logout() async {
+    print('DEBUG: Memulai proses logout dari ProfileScreen.');
+    try {
+      await AuthService().signOut();
+      print(
+          'DEBUG: AuthService().signOut() berhasil dipanggil. Sesi telah diakhiri.');
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+      // Setelah logout, secara paksa navigasi kembali ke root dan tampilkan LoginScreen
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (Route<dynamic> route) =>
+            false, // Ini akan menghapus semua route sebelumnya
+      );
 
-    switch (index) {
-      case 0:
-        Navigator.pushReplacementNamed(context, '/HomeScreen');
-        break;
-      case 1:
-        if (widget.role == 'admin') {
-          Navigator.pushReplacementNamed(context, '/ReportsAdmin');
-        } else {
-          Navigator.pushReplacementNamed(context, '/ReportsUser');
-        }
-        break;
-      case 2:
-        // Tetap di halaman profil
-        break;
+      print('DEBUG: Navigasi paksa ke LoginScreen selesai.');
+    } catch (e) {
+      print('DEBUG: Error saat logout di ProfileScreen: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal logout: ${e.toString()}')),
+      );
     }
   }
 
@@ -92,11 +91,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  // Implementasikan logika logout
-                },
+                onPressed: _logout, // Panggil fungsi logout
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent, // Contoh warna logout
+                  backgroundColor: Colors.redAccent,
                   foregroundColor: Colors.white,
                 ),
                 child: const Text('Logout'),
@@ -104,11 +101,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ],
         ),
-      ),
-      bottomNavigationBar: CustomBottomNavigationBar(
-        currentIndex: _selectedIndex,
-        role: 'admin', // Atur role sesuai kebutuhan atau ambil dari state
-        onItemSelected: _onItemTapped,
       ),
     );
   }

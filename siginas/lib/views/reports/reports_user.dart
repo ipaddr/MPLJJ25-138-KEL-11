@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:siginas/views/reports/report_student.dart';
-import 'package:siginas/widgets/navigation_bar.dart';
 
 class ReportsUser extends StatefulWidget {
   final String role;
@@ -19,30 +17,6 @@ class _ReportsUserState extends State<ReportsUser> {
     {'nama': 'Citra Dewi', 'nisn': '0051234569', 'sudahLapor': true},
     // Tambahkan data dummy siswa lainnya di sini
   ];
-
-  int _selectedIndex = 1;
-
-  void _handleNavigation(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    switch (index) {
-      case 0:
-        Navigator.pushNamed(context, '/HomeScreen');
-        break;
-      case 1:
-        if (widget.role == 'admin') {
-          Navigator.pushNamed(context, '/ReportsAdmin');
-        } else {
-          Navigator.pushNamed(context, '/ReportsUser');
-        }
-        break;
-      case 2:
-        Navigator.pushNamed(context, '/ProfileScreen');
-        break;
-    }
-  }
 
   // Widget untuk menampilkan status laporan
   Widget _buildReportStatus(bool sudahLapor) {
@@ -117,8 +91,7 @@ class _ReportsUserState extends State<ReportsUser> {
 
   // Widget untuk menampilkan daftar siswa (akan diisi dari Firestore nanti)
   Widget _buildStudentList() {
-    // Di masa depan, Anda akan mengganti ini dengan StreamBuilder untuk Firestore
-    // Contoh (belum terhubung ke Firestore):
+    // ganti ini dengan StreamBuilder untuk Firestore
     return ListView.builder(
       itemCount: _studentList.length,
       itemBuilder: (context, index) {
@@ -156,7 +129,7 @@ class _ReportsUserState extends State<ReportsUser> {
               ),
               onChanged: (value) {
                 // Implementasikan logika pencarian siswa jika diperlukan
-                // Anda bisa memfilter _studentList berdasarkan nilai pencarian
+                // memfilter _studentList berdasarkan nilai pencarian
                 print('Mencari: $value');
               },
             ),
@@ -165,11 +138,6 @@ class _ReportsUserState extends State<ReportsUser> {
             child: _buildStudentList(),
           ),
         ],
-      ),
-      bottomNavigationBar: CustomBottomNavigationBar(
-        currentIndex: _selectedIndex,
-        role: 'user', // Atur role sebagai user di halaman ini
-        onItemSelected: _handleNavigation,
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

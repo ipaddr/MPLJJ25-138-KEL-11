@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:siginas/views/auth/register_screen.dart';
+import 'package:siginas/services/auth_service.dart'; // Import AuthService
+import 'package:siginas/views/auth/register_screen.dart'; // Import RegisterScreen
+import 'package:siginas/views/main_app_navigator.dart'; // Import MainAppNavigator
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,6 +15,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false; // State untuk indikator loading
 
   void _togglePasswordVisibility() {
     setState(() {
@@ -23,33 +25,80 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
-      try {
-        final email = _emailController.text.trim();
-        final password = _passwordController.text.trim();
-        final userCredential =
-            await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
-        print('Login berhasil: ${userCredential.user?.email}');
-        Navigator.pushReplacementNamed(context, '/home');
-      } catch (e) {
-        print('Login gagal: $e');
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Login Gagal'),
-            content: Text(e.toString()),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
+      setState(() {
+        _isLoading = true; // Tampilkan loading
+      });
+
+      final String email = _emailController.text.trim();
+      final String password = _passwordController.text.trim();
+
+      String? errorMessage = await AuthService().signIn(
+        email: email,
+        password: password,
+      );
+
+      // Pastikan _isLoading mati sebelum menampilkan dialog error atau navigasi
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (errorMessage == null) {
+        // Login berhasil. Ambil role pengguna dari Firestore.
+        print(
+            'DEBUG (LoginScreen): Login berhasil. Mengambil role pengguna...');
+        String? userRole =
+            await AuthService().getUserRole(AuthService().currentUser!.uid);
+
+        if (userRole != null) {
+          print(
+              'DEBUG (LoginScreen): Role didapat: $userRole. Mengarahkan ke MainAppNavigator.');
+          // Arahkan secara paksa ke MainAppNavigator dengan role yang benar
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => MainAppNavigator(
+                  role: userRole), // Teruskan role yang didapat
+            ),
+            (Route<dynamic> route) => false, // Menghapus semua route sebelumnya
+          );
+        } else {
+          // Kasus aneh: login berhasil tapi role tidak ditemukan di Firestore
+          print(
+              'DEBUG (LoginScreen): Login berhasil tapi role tidak ditemukan. Logout paksa.');
+          await AuthService().signOut(); // Logout untuk membersihkan sesi
+          _showErrorDialog(
+              'Login berhasil, tapi data role tidak ditemukan. Silakan coba lagi atau hubungi admin.');
+        }
+      } else {
+        // Login gagal. Tampilkan pesan error.
+        print('DEBUG (LoginScreen): Login gagal: $errorMessage');
+        _showErrorDialog(
+            errorMessage); // Panggil fungsi untuk menampilkan dialog error
       }
     }
+  }
+
+  // Fungsi untuk menampilkan dialog error
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Login Gagal'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -82,6 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Text(
                   'Silakan masuk ke akun Anda',
                   style: TextStyle(fontSize: 16.0, color: Colors.grey),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24.0),
                 TextFormField(
@@ -131,12 +181,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _login,
+                    onPressed: _isLoading
+                        ? null
+                        : _login, // Tombol disable saat loading
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
                       textStyle: const TextStyle(fontSize: 18.0),
                     ),
-                    child: const Text('Masuk'),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(
+                            color: Colors.white,
+                          ) // Indikator loading
+                        : const Text('Masuk'),
                   ),
                 ),
                 const SizedBox(height: 16.0),
@@ -145,8 +201,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: <Widget>[
                     const Text('Belum punya akun?'),
                     TextButton(
-                      onPressed: () =>
-                          Navigator.pushNamed(context, '/RegisterScreen'),
+                      onPressed: _isLoading
+                          ? null
+                          : () => Navigator.pushNamed(context, '/register'),
                       child: const Text('Daftar'),
                     ),
                   ],
@@ -156,12 +213,12 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
+      bottomNavigationBar: const Padding(
+        padding: EdgeInsets.all(16.0),
         child: Text(
           '© 2025 SiGiNas. All rights reserved.',
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 12.0, color: Colors.grey),
+          style: TextStyle(fontSize: 12.0, color: Colors.grey),
         ),
       ),
     );

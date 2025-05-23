@@ -56,7 +56,8 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
                 final message = _messages[index];
                 final isUser = message['role'] == 'user';
                 return Align(
-                  alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  alignment:
+                      isUser ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 4),
                     padding: const EdgeInsets.all(12),

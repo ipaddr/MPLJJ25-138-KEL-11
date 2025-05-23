@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:siginas/views/all_pending_registration.dart';
 import 'package:siginas/views/article_screen.dart';
-// import 'package:siginas/views/reports/reports_admin.dart';
-// import 'package:siginas/views/reports/reports_user.dart';
-import 'package:siginas/widgets/navigation_bar.dart';
 import 'package:siginas/views/chatbot/chatbot_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -16,32 +13,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
-
-  void _handleNavigation(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    switch (index) {
-      case 0:
-        Navigator.pushReplacementNamed(context, '/HomeScreen');
-        break;
-      case 1:
-        if (widget.role == 'admin') {
-          Navigator.pushReplacementNamed(context, '/ReportsAdmin');
-        } else {
-          Navigator.pushReplacementNamed(context, '/ReportsUser');
-        }
-        break;
-      case 2:
-        Navigator.pushReplacementNamed(context, '/ProfileScreen');
-        break;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    // Contoh data lengkap pendaftaran tertunda
     final List<Map<String, dynamic>> _allPendingRegistrations = [
       {
         'namaSekolah': 'SD Negeri 1 Jakarta',
@@ -79,28 +53,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-  title: const Text('SiGiNas'),
-  actions: [
-    IconButton(
-      icon: const Icon(Icons.chat_bubble_outline),
-      tooltip: 'Chatbot',
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const ChatBotScreen(),
+        title: const Text('SiGiNas'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.chat_bubble_outline),
+            tooltip: 'Chatbot',
+            onPressed: () {
+              // Navigasi ke ChatBotScreen
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ChatBotScreen(),
+                ),
+              );
+            },
           ),
-        );
-      },
-    ),
-    IconButton(
-      icon: const Icon(Icons.settings_outlined),
-      onPressed: () {
-        // Navigasi ke halaman pengaturan
-      },
-    ),
-  ],
-),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -126,6 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   TextButton(
                     onPressed: () {
+                      // Navigasi ke AllPendingRegistrationsScreen
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -148,15 +118,9 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16.0),
-            _buildNutritionalArticleList(),
+            _buildNutritionalArticleList(context),
           ],
         ),
-      ),
-      bottomNavigationBar: CustomBottomNavigationBar(
-        initialIndex: _selectedIndex,
-        role: widget.role,
-        onItemSelected: _handleNavigation,
-        currentIndex: 0,
       ),
     );
   }
@@ -187,7 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildNutritionalArticleList() {
+  Widget _buildNutritionalArticleList(BuildContext context) {
     final List<ArticleData> articles = [
       ArticleData(
         title: 'Panduan Gizi Seimbang untuk Anak Sekolah',
@@ -202,11 +166,13 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return Column(
-      children: articles.map((article) => _buildArticleItem(article)).toList(),
+      children: articles
+          .map((article) => _buildArticleItem(article, context))
+          .toList(),
     );
   }
 
-  Widget _buildArticleItem(ArticleData article) {
+  Widget _buildArticleItem(ArticleData article, BuildContext context) {
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -214,8 +180,8 @@ class _HomeScreenState extends State<HomeScreen> {
           MaterialPageRoute(
             builder: (context) => ArticleScreen(
               title: article.title,
-              authorDate: 'Tanggal Artikel', // Ganti dengan data sebenarnya
-              readTime: 'Waktu Baca', // Ganti dengan data sebenarnya
+              authorDate: 'Tanggal Artikel',
+              readTime: 'Waktu Baca',
               content: article.content,
             ),
           ),
@@ -230,8 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 80,
                 height: 80,
                 color: Colors.grey[300],
-                child:
-                    const Center(child: Text('Article Image')), // Placeholder
+                child: const Center(child: Text('Article Image')),
               ),
               const SizedBox(width: 16.0),
               Expanded(

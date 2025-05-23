@@ -9,8 +9,8 @@ class CustomBottomNavigationBar extends StatefulWidget {
     super.key,
     required this.role,
     required this.onItemSelected,
-    this.initialIndex = 0,
-    required int currentIndex,
+    this.initialIndex = 0, // ini akan menjadi current index awal
+    // Hapus 'required int currentIndex,' dari sini
   });
 
   @override
@@ -27,11 +27,22 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar> {
     _selectedIndex = widget.initialIndex;
   }
 
+  @override
+  void didUpdateWidget(covariant CustomBottomNavigationBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Jika parent widget mengubah initialIndex, update _selectedIndex
+    if (widget.initialIndex != oldWidget.initialIndex) {
+      setState(() {
+        _selectedIndex = widget.initialIndex;
+      });
+    }
+  }
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
-    widget.onItemSelected(index);
+    widget.onItemSelected(index); // Panggil callback ke parent
   }
 
   @override
@@ -43,9 +54,15 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar> {
           label: 'Beranda',
         ),
         BottomNavigationBarItem(
+          // Logika perbedaan ikon dan label berdasarkan role
           icon: Icon(
-              widget.role == 'admin' ? Icons.assessment : Icons.assessment),
-          label: widget.role == 'admin' ? 'Laporan' : 'Laporan',
+            widget.role == 'admin'
+                ? Icons.assessment
+                : Icons.camera_alt, // Admin: Reports, User: Camera
+          ),
+          label: widget.role == 'admin'
+              ? 'Laporan'
+              : 'Kamera', // Admin: Laporan, User: Kamera
         ),
         const BottomNavigationBarItem(
           icon: Icon(Icons.person_outline),

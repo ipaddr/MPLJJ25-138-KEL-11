@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:siginas/widgets/navigation_bar.dart'; // Import CustomBottomNavigationBar
+// import 'package:siginas/views/reports/belum_upload_screen.dart';
 
 class ReportsAdmin extends StatefulWidget {
   final String role;
@@ -10,30 +10,6 @@ class ReportsAdmin extends StatefulWidget {
 }
 
 class _ReportsAdminState extends State<ReportsAdmin> {
-  int _selectedIndex = 1; // Set index laporan aktif
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    switch (index) {
-      case 0:
-        Navigator.pushReplacementNamed(context, '/HomeScreen');
-        break;
-      case 1:
-        if (widget.role == 'admin') {
-          Navigator.pushReplacementNamed(context, '/ReportsAdmin');
-        } else {
-          Navigator.pushReplacementNamed(context, '/ReportsUser');
-        }
-        break;
-      case 2:
-        Navigator.pushReplacementNamed(context, '/ProfileScreen');
-        break;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -130,7 +106,17 @@ class _ReportsAdminState extends State<ReportsAdmin> {
               children: [
                 const Text('Belum Upload',
                     style: TextStyle(fontWeight: FontWeight.bold)),
-                TextButton(onPressed: () {}, child: const Text('See All')),
+                // TextButton(
+                //   onPressed: () {
+                //     // Navigasi ke halaman Belum Upload
+                //     Navigator.push(
+                //       context,
+                //       MaterialPageRoute(
+                //           builder: (context) => const BelumUploadScreen()),
+                //     );
+                //   },
+                //   child: const Text('See All'),
+                // ),
               ],
             ),
             const SizedBox(height: 8.0),
@@ -141,12 +127,13 @@ class _ReportsAdminState extends State<ReportsAdmin> {
               separatorBuilder: (context, index) => const Divider(),
               itemBuilder: (context, index) {
                 return ListTile(
-                  title: Text('SMP Negeri ${index + 1} Padang'),
-                  subtitle: const Text('Padang'),
+                  title: Text(
+                      'SMP Negeri ${index + 1} Padang'), // Placeholder data
+                  subtitle: const Text('Padang'), // Placeholder data
                   // trailing: const Icon(Icons.arrow_forward_ios),
-                  // onTap: () {
-                  //   // Handle tap
-                  // },
+                  onTap: () {
+                    // Handle tap to view detail if needed
+                  },
                 );
               },
             ),
@@ -237,11 +224,6 @@ class _ReportsAdminState extends State<ReportsAdmin> {
             ),
           ],
         ),
-      ),
-      bottomNavigationBar: CustomBottomNavigationBar(
-        currentIndex: _selectedIndex,
-        role: 'user', // Atur role sebagai 'admin'
-        onItemSelected: _onItemTapped,
       ),
     );
   }
