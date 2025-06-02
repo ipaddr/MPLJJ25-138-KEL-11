@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:siginas/services/auth_service.dart'; // Import AuthService
-import 'package:siginas/views/auth/register_screen.dart'; // Import RegisterScreen
+// import 'package:siginas/views/auth/register_screen.dart'; // Import RegisterScreen
 import 'package:siginas/views/main_app_navigator.dart'; // Import MainAppNavigator
 
 class LoginScreen extends StatefulWidget {

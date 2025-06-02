@@ -3,7 +3,7 @@ import 'package:siginas/widgets/navigation_bar.dart';
 import 'package:siginas/views/home_screen.dart';
 import 'package:siginas/views/reports/reports_admin.dart';
 import 'package:siginas/views/reports/reports_user.dart';
-import 'package:siginas/views/profile_screen.dart';
+import 'package:siginas/views/profile/profile_screen.dart';
 
 class MainAppNavigator extends StatefulWidget {
   final String role;
