@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:siginas/views/all_pending_registration.dart';
 import 'package:siginas/views/article_screen.dart';
 import 'package:siginas/views/chatbot/chatbot_screen.dart';
+import 'package:siginas/services/firestore_service.dart';
+import 'package:siginas/widgets/monthly_recipient_chart.dart'; // Import widget grafik baru
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomeScreen extends StatefulWidget {
   final String role;
@@ -15,42 +18,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
-    // Contoh data lengkap pendaftaran tertunda
-    final List<Map<String, dynamic>> _allPendingRegistrations = [
-      {
-        'namaSekolah': 'SD Negeri 1 Jakarta',
-        'alamat': 'Jakarta Pusat',
-        'jumlahSiswa': 300,
-        'email': 'sdn1@jakarta.go.id',
-        'npsn': '10101010'
-      },
-      {
-        'namaSekolah': 'SMP Negeri 3 Surabaya',
-        'alamat': 'Surabaya Timur',
-        'jumlahSiswa': 450,
-        'email': 'smpn3@surabaya.go.id',
-        'npsn': '20202020'
-      },
-      {
-        'namaSekolah': 'SD Negeri 5 Bandung',
-        'alamat': 'Bandung Barat',
-        'jumlahSiswa': 350,
-        'email': 'sdn5@bandung.go.id',
-        'npsn': '10303030'
-      },
-      {
-        'namaSekolah': 'SMA Negeri 2 Yogyakarta',
-        'alamat': 'Yogyakarta Kota',
-        'jumlahSiswa': 500,
-        'email': 'sman2@yogyakarta.go.id',
-        'npsn': '30404040'
-      },
-      // ... tambahkan data lainnya
-    ];
-
-    final List<Map<String, dynamic>> _limitedPendingRegistrations =
-        _allPendingRegistrations.take(3).toList();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('SiGiNas'),
@@ -59,7 +26,6 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.chat_bubble_outline),
             tooltip: 'Chatbot',
             onPressed: () {
-              // Navigasi ke ChatBotScreen
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -80,132 +46,217 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16.0),
-            _buildMonthlyRecipientChart(),
+
+            // Widget chart yang sudah dipisah ke file baru
+            const MonthlyRecipientChart(),
+
+            const SizedBox(height: 24.0),
+
             if (widget.role == 'admin') ...[
               const SizedBox(height: 24.0),
-              // _buildTotalInfoCard(), // Anda bisa menambahkan ini jika diperlukan
+              _buildPendingRegistrationsSection(context),
               const SizedBox(height: 24.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Pendaftaran Tertunda',
-                    style:
-                        TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      // Navigasi ke AllPendingRegistrationsScreen
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AllPendingRegistrationsScreen(
-                            allPendingRegistrations: _allPendingRegistrations,
-                          ),
-                        ),
-                      );
-                    },
-                    child: const Text('Lihat Semua'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
-              _buildLimitedPendingRegistrations(_limitedPendingRegistrations),
             ],
-            const SizedBox(height: 24.0),
+
             const Text(
               'Artikel Gizi Terbaru',
               style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16.0),
-            _buildNutritionalArticleList(context),
+            _buildArticlesFromFirestore(context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMonthlyRecipientChart() {
-    return Container(
-      height: 200,
-      color: Colors.grey[200],
-      child: const Center(
-        child: Text('Chart Visualization'),
-      ),
-    );
-  }
+  Widget _buildPendingRegistrationsSection(BuildContext context) {
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: FirestoreService().streamPendingRegistrations(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const SizedBox.shrink();
+        }
 
-  Widget _buildLimitedPendingRegistrations(
-      List<Map<String, dynamic>> registrations) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: registrations.length,
-      itemBuilder: (context, index) {
-        final registration = registrations[index];
-        return ListTile(
-          title: Text(registration['namaSekolah'] ?? 'Nama Sekolah'),
-          subtitle: Text(registration['alamat'] ?? 'Alamat belum tersedia'),
+        final allPending = snapshot.data!;
+        final List<Map<String, dynamic>> limitedPending =
+            allPending.take(3).toList();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Pendaftaran Tertunda',
+                  style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AllPendingRegistrationsScreen(
+                          allPendingRegistrations: allPending,
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('Lihat Semua'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16.0),
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: limitedPending.length,
+              separatorBuilder: (context, index) => const Divider(),
+              itemBuilder: (context, index) {
+                final registration = limitedPending[index];
+                return ListTile(
+                  title: Text(registration['nama_sekolah'] ??
+                      'Nama Sekolah Tidak Tersedia'),
+                  subtitle:
+                      Text(registration['alamat'] ?? 'Alamat Tidak Tersedia'),
+                  trailing: const Icon(Icons.arrow_forward_ios),
+                  onTap: () {
+                    // Tambahkan navigasi ke detail jika diperlukan
+                  },
+                );
+              },
+            ),
+          ],
         );
       },
     );
   }
 
-  Widget _buildNutritionalArticleList(BuildContext context) {
-    final List<ArticleData> articles = [
-      ArticleData(
-        title: 'Panduan Gizi Seimbang untuk Anak Sekolah',
-        timeAgo: '2 jam yang lalu',
-        content: 'Isi lengkap artikel panduan gizi seimbang...',
-      ),
-      ArticleData(
-        title: 'Tips Menyiapkan Bekal Sehat',
-        timeAgo: '5 jam yang lalu',
-        content: 'Berbagai tips praktis untuk menyiapkan bekal sehat...',
-      ),
-    ];
+  Widget _buildArticlesFromFirestore(BuildContext context) {
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: FirestoreService().streamArticles(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Gagal memuat artikel: ${snapshot.error}'));
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text('Belum ada artikel yang tersedia.'));
+        }
 
-    return Column(
-      children: articles
-          .map((article) => _buildArticleItem(article, context))
-          .toList(),
+        final articles = snapshot.data!;
+
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: articles.length,
+          itemBuilder: (context, index) {
+            final article = articles[index];
+            Timestamp? publishDate = article['publish_date'] as Timestamp?;
+            String formattedDate = publishDate != null
+                ? '${publishDate.toDate().day} ${[
+                    'Jan',
+                    'Feb',
+                    'Mar',
+                    'Apr',
+                    'Mei',
+                    'Jun',
+                    'Jul',
+                    'Agu',
+                    'Sep',
+                    'Okt',
+                    'Nov',
+                    'Des'
+                  ][publishDate.toDate().month - 1]} ${publishDate.toDate().year}'
+                : 'Tanggal tidak tersedia';
+
+            String timeAgo = ''; // Placeholder jika ingin fitur "X jam lalu"
+
+            return _buildArticleItem(
+              context: context,
+              title: article['title'] ?? 'Judul Tidak Tersedia',
+              timeAgo: timeAgo,
+              content: article['content'] ?? 'Konten tidak tersedia',
+              imageUrl: article['image_url'],
+              authorDate: formattedDate,
+              readTime: '${article['read_time_minutes'] ?? 0} menit baca',
+            );
+          },
+        );
+      },
     );
   }
 
-  Widget _buildArticleItem(ArticleData article, BuildContext context) {
+  Widget _buildArticleItem({
+    required BuildContext context,
+    required String title,
+    required String timeAgo,
+    required String content,
+    String? imageUrl,
+    required String authorDate,
+    required String readTime,
+  }) {
     return InkWell(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => ArticleScreen(
-              title: article.title,
-              authorDate: 'Tanggal Artikel',
-              readTime: 'Waktu Baca',
-              content: article.content,
+              title: title,
+              authorDate: authorDate,
+              readTime: readTime,
+              content: content,
+              imageUrl: imageUrl,
             ),
           ),
         );
       },
       child: Card(
+        margin: const EdgeInsets.only(bottom: 16.0),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 width: 80,
                 height: 80,
                 color: Colors.grey[300],
-                child: const Center(child: Text('Article Image')),
+                child: imageUrl != null && imageUrl.isNotEmpty
+                    ? Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Center(child: Icon(Icons.broken_image)),
+                      )
+                    : const Center(child: Text('No Image')),
               ),
               const SizedBox(width: 16.0),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(article.title,
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text(article.timeAgo, style: TextStyle(color: Colors.grey)),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16.0),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4.0),
+                    Text(
+                      '$authorDate • $readTime',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12.0),
+                    ),
                   ],
                 ),
               ),
@@ -215,16 +266,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-}
-
-class ArticleData {
-  final String title;
-  final String timeAgo;
-  final String content;
-
-  ArticleData({
-    required this.title,
-    required this.timeAgo,
-    required this.content,
-  });
 }

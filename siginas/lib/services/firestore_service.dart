@@ -186,7 +186,7 @@ class FirestoreService {
     print('DEBUG (FirestoreService): Streaming national stats...');
     return _firestore
         .collection('national_stats')
-        .doc('summary')
+        .doc('Gl14eP7zjqub64AAhWfR')
         .snapshots()
         .map((snapshot) {
       if (snapshot.exists) {

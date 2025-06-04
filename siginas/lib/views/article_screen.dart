@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart'; // Pastikan import ini ada
 
 class ArticleScreen extends StatelessWidget {
   final String title;
   final String authorDate;
   final String readTime;
-  final String imageUrl; // Jika ada gambar dari URL
+  final String? imageUrl; // Ini sudah benar sebagai nullable String
   final String content;
 
   const ArticleScreen({
@@ -12,7 +13,7 @@ class ArticleScreen extends StatelessWidget {
     required this.title,
     required this.authorDate,
     required this.readTime,
-    this.imageUrl = '', // Nilai default jika tidak ada URL gambar
+    this.imageUrl, // <--- Perbaiki: Hapus nilai default seperti = ''
     required this.content,
   });
 
@@ -65,15 +66,22 @@ class ArticleScreen extends StatelessWidget {
               color:
                   Colors.grey[300], // Placeholder warna abu-abu seperti gambar
               child: Center(
-                child: imageUrl.isNotEmpty
-                    ? Image.network(
-                        imageUrl,
+                // KOREKSI DI SINI: Menggunakan CachedNetworkImage dan penanganan null/empty
+                child: imageUrl != null && imageUrl!.isNotEmpty
+                    ? CachedNetworkImage(
+                        // Gunakan CachedNetworkImage
+                        imageUrl:
+                            imageUrl!, // Gunakan ! karena sudah diperiksa tidak null
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Text('[Gambar Ilustrasi Gizi Anak]');
-                        },
+                        placeholder: (context, url) => const Center(
+                            child:
+                                CircularProgressIndicator()), // Indikator loading
+                        errorWidget: (context, url, error) => const Center(
+                            child: Icon(Icons
+                                .broken_image)), // Ikon error jika gambar gagal dimuat
                       )
-                    : const Text('[Gambar Ilustrasi Gizi Anak]'),
+                    : const Text(
+                        '[Gambar Ilustrasi Gizi Anak]'), // Placeholder jika tidak ada URL
               ),
             ),
             const SizedBox(height: 16.0),
