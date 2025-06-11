@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:siginas/services/firestore_service.dart';
 
 class RegistrationDetailScreen extends StatelessWidget {
   final String schoolName;
@@ -6,6 +7,7 @@ class RegistrationDetailScreen extends StatelessWidget {
   final int numberOfStudents;
   final String email;
   final String npsn;
+  final String schoolUid;
 
   const RegistrationDetailScreen({
     super.key,
@@ -14,7 +16,52 @@ class RegistrationDetailScreen extends StatelessWidget {
     required this.numberOfStudents,
     required this.email,
     required this.npsn,
+    required this.schoolUid,
   });
+
+  // Fungsi untuk menerima pendaftaran
+  Future<void> _acceptRegistration(BuildContext context) async {
+    print('DEBUG (RegDetail): Menerima pendaftaran untuk UID: $schoolUid');
+    final String? errorMessage = await FirestoreService()
+        .updateSchoolVerificationStatus(
+            schoolUid, true); // Set is_verified ke true
+
+    if (errorMessage == null) {
+      // Pastikan widget masih mounted sebelum menampilkan SnackBar dan pop
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pendaftaran berhasil diterima!')),
+      );
+      Navigator.pop(
+          context); // Kembali ke halaman sebelumnya (AllPendingRegistrationsScreen)
+    } else {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menerima pendaftaran: $errorMessage')),
+      );
+    }
+  }
+
+  // Fungsi untuk menolak pendaftaran
+  Future<void> _rejectRegistration(BuildContext context) async {
+    print('DEBUG (RegDetail): Menolak pendaftaran untuk UID: $schoolUid');
+    // Anda bisa set is_verified ke false lagi, atau tambahkan field status lain seperti 'rejected'
+    final String? errorMessage = await FirestoreService()
+        .updateSchoolVerificationStatus(schoolUid, false);
+
+    if (errorMessage == null) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pendaftaran berhasil ditolak!')),
+      );
+      Navigator.pop(context);
+    } else {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menolak pendaftaran: $errorMessage')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,11 +89,8 @@ class RegistrationDetailScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 ElevatedButton(
-                  onPressed: () {
-                    // Implementasikan logika terima pendaftaran
-                    print('Pendaftaran diterima untuk $schoolName');
-                    Navigator.pop(context); // Kembali ke halaman sebelumnya
-                  },
+                  onPressed: () =>
+                      _acceptRegistration(context), // Panggil fungsi terima
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
@@ -54,11 +98,8 @@ class RegistrationDetailScreen extends StatelessWidget {
                   child: const Text('Terima'),
                 ),
                 ElevatedButton(
-                  onPressed: () {
-                    // Implementasikan logika tolak pendaftaran
-                    print('Pendaftaran ditolak untuk $schoolName');
-                    Navigator.pop(context); // Kembali ke halaman sebelumnya
-                  },
+                  onPressed: () =>
+                      _rejectRegistration(context), // Panggil fungsi tolak
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
                     foregroundColor: Colors.white,

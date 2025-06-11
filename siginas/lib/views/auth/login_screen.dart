@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:siginas/services/auth_service.dart'; // Import AuthService
-// import 'package:siginas/views/auth/register_screen.dart'; // Import RegisterScreen
-import 'package:siginas/views/main_app_navigator.dart'; // Import MainAppNavigator
+import 'package:siginas/services/auth_service.dart';
+import 'package:siginas/views/main_app_navigator.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,7 +14,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
-  bool _isLoading = false; // State untuk indikator loading
+  bool _isLoading = false;
 
   void _togglePasswordVisibility() {
     setState(() {
@@ -26,7 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
-        _isLoading = true; // Tampilkan loading
+        _isLoading = true;
       });
 
       final String email = _emailController.text.trim();
@@ -38,21 +37,51 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       // Pastikan _isLoading mati sebelum menampilkan dialog error atau navigasi
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
 
       if (errorMessage == null) {
-        // Login berhasil. Ambil role pengguna dari Firestore.
+        // Login berhasil di Firebase Auth. Sekarang, ambil detail pengguna dari Firestore.
         print(
-            'DEBUG (LoginScreen): Login berhasil. Mengambil role pengguna...');
-        String? userRole =
-            await AuthService().getUserRole(AuthService().currentUser!.uid);
+            'DEBUG (LoginScreen): Login berhasil Auth. Mengambil detail pengguna dari Firestore...');
 
-        if (userRole != null) {
+        final String? currentUserId = AuthService().currentUser?.uid;
+        if (currentUserId == null) {
+          _showErrorDialog(
+              'Terjadi kesalahan: UID tidak ditemukan setelah login.');
+          return;
+        }
+
+        Map<String, dynamic>? userDetails =
+            await AuthService().getUserDetails(currentUserId);
+
+        if (!mounted) return; // Penting: cek mounted setelah async call
+
+        if (userDetails != null) {
+          final String userRole = userDetails['role'] ?? 'unknown';
+          final bool isVerified =
+              userDetails['is_verified'] ?? false; // Ambil status is_verified
+
           print(
-              'DEBUG (LoginScreen): Role didapat: $userRole. Mengarahkan ke MainAppNavigator.');
-          // Arahkan secara paksa ke MainAppNavigator dengan role yang benar
+              'DEBUG (LoginScreen): Role didapat: $userRole, Is Verified: $isVerified');
+
+          // --- LOGIKA VERIFIKASI ---
+          if (userRole == 'school' && !isVerified) {
+            // Jika role adalah 'school' dan belum diverifikasi
+            print(
+                'DEBUG (LoginScreen): Akun sekolah belum diverifikasi. Logout paksa.');
+            await AuthService().signOut(); // Logout untuk membersihkan sesi
+            if (!mounted) return;
+            _showErrorDialog(
+                'Akun Anda belum diverifikasi oleh admin. Silakan tunggu atau hubungi admin.');
+            return;
+          }
+
+          // Jika diverifikasi atau role bukan 'school', lanjutkan ke MainAppNavigator
+          print(
+              'DEBUG (LoginScreen): Mengarahkan ke MainAppNavigator dengan role: $userRole.');
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
               builder: (context) => MainAppNavigator(
@@ -61,12 +90,12 @@ class _LoginScreenState extends State<LoginScreen> {
             (Route<dynamic> route) => false, // Menghapus semua route sebelumnya
           );
         } else {
-          // Kasus aneh: login berhasil tapi role tidak ditemukan di Firestore
           print(
-              'DEBUG (LoginScreen): Login berhasil tapi role tidak ditemukan. Logout paksa.');
+              'DEBUG (LoginScreen): Login berhasil tapi dokumen profil tidak ditemukan. Logout paksa.');
           await AuthService().signOut(); // Logout untuk membersihkan sesi
+          if (!mounted) return;
           _showErrorDialog(
-              'Login berhasil, tapi data role tidak ditemukan. Silakan coba lagi atau hubungi admin.');
+              'Login berhasil, tapi data profil tidak ditemukan. Silakan coba lagi atau hubungi admin.');
         }
       } else {
         // Login gagal. Tampilkan pesan error.

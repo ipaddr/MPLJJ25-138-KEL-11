@@ -1,9 +1,11 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:siginas/views/all_pending_registration.dart';
 import 'package:siginas/views/article_screen.dart';
 import 'package:siginas/views/chatbot/chatbot_screen.dart';
 import 'package:siginas/services/firestore_service.dart';
-import 'package:siginas/widgets/monthly_recipient_chart.dart'; // Import widget grafik baru
+import 'package:siginas/views/registration_details.dart';
+import 'package:siginas/widgets/monthly_recipient_chart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -78,10 +80,13 @@ class _HomeScreenState extends State<HomeScreen> {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError) {
+          print(
+              'DEBUG (HomeScreen): Error loading pending registrations: ${snapshot.error}');
           return Center(child: Text('Error: ${snapshot.error}'));
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const SizedBox.shrink();
+          return const SizedBox
+              .shrink(); // Sembunyikan jika tidak ada pendaftaran tertunda
         }
 
         final allPending = snapshot.data!;
@@ -100,12 +105,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 TextButton(
                   onPressed: () {
+                    // Navigasi ke AllPendingRegistrationsScreen
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => AllPendingRegistrationsScreen(
-                          allPendingRegistrations: allPending,
-                        ),
+                        builder: (context) =>
+                            const AllPendingRegistrationsScreen(),
                       ),
                     );
                   },
@@ -128,7 +133,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text(registration['alamat'] ?? 'Alamat Tidak Tersedia'),
                   trailing: const Icon(Icons.arrow_forward_ios),
                   onTap: () {
-                    // Tambahkan navigasi ke detail jika diperlukan
+                    // Navigasi ke RegistrationDetailScreen saat item di-tap
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => RegistrationDetailScreen(
+                          schoolName: registration['nama_sekolah'] ?? '',
+                          address: registration['alamat'] ?? '',
+                          numberOfStudents: registration['jumlah_siswa'] ?? 0,
+                          email: registration['email'] ?? '',
+                          npsn: registration['npsn'] ?? '',
+                          schoolUid: registration['uid'] ?? '',
+                        ),
+                      ),
+                    );
                   },
                 );
               },
@@ -147,6 +165,8 @@ class _HomeScreenState extends State<HomeScreen> {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError) {
+          print(
+              'DEBUG (HomeScreen): Error loading articles: ${snapshot.error}');
           return Center(child: Text('Gagal memuat artikel: ${snapshot.error}'));
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -161,6 +181,8 @@ class _HomeScreenState extends State<HomeScreen> {
           itemCount: articles.length,
           itemBuilder: (context, index) {
             final article = articles[index];
+
+            // Format tanggal publikasi
             Timestamp? publishDate = article['publish_date'] as Timestamp?;
             String formattedDate = publishDate != null
                 ? '${publishDate.toDate().day} ${[
@@ -179,16 +201,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   ][publishDate.toDate().month - 1]} ${publishDate.toDate().year}'
                 : 'Tanggal tidak tersedia';
 
-            String timeAgo = ''; // Placeholder jika ingin fitur "X jam lalu"
+            // Dapatkan author dari Firestore
+            String authorName = article['author'] ?? 'Anonim';
 
             return _buildArticleItem(
               context: context,
               title: article['title'] ?? 'Judul Tidak Tersedia',
-              timeAgo: timeAgo,
               content: article['content'] ?? 'Konten tidak tersedia',
-              imageUrl: article['image_url'],
-              authorDate: formattedDate,
-              readTime: '${article['read_time_minutes'] ?? 0} menit baca',
+              imageUrl: article['image_url'] as String?,
+              author: authorName,
+              formattedPublishDate:
+                  formattedDate, // Meneruskan tanggal publikasi yang sudah diformat
             );
           },
         );
@@ -199,11 +222,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildArticleItem({
     required BuildContext context,
     required String title,
-    required String timeAgo,
     required String content,
     String? imageUrl,
-    required String authorDate,
-    required String readTime,
+    required String author,
+    required String formattedPublishDate,
   }) {
     return InkWell(
       onTap: () {
@@ -212,8 +234,8 @@ class _HomeScreenState extends State<HomeScreen> {
           MaterialPageRoute(
             builder: (context) => ArticleScreen(
               title: title,
-              authorDate: authorDate,
-              readTime: readTime,
+              author: author,
+              formattedPublishDate: formattedPublishDate,
               content: content,
               imageUrl: imageUrl,
             ),
@@ -231,11 +253,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 80,
                 height: 80,
                 color: Colors.grey[300],
-                child: imageUrl != null && imageUrl.isNotEmpty
-                    ? Image.network(
-                        imageUrl,
+                child: imageUrl != null && imageUrl!.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: imageUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
+                        placeholder: (context, url) => const Center(
+                            child: CircularProgressIndicator(strokeWidth: 2.0)),
+                        errorWidget: (context, url, error) =>
                             const Center(child: Icon(Icons.broken_image)),
                       )
                     : const Center(child: Text('No Image')),
@@ -253,10 +277,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4.0),
-                    Text(
-                      '$authorDate • $readTime',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12.0),
-                    ),
                   ],
                 ),
               ),

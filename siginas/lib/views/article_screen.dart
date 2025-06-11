@@ -3,17 +3,18 @@ import 'package:cached_network_image/cached_network_image.dart'; // Pastikan imp
 
 class ArticleScreen extends StatelessWidget {
   final String title;
-  final String authorDate;
-  final String readTime;
-  final String? imageUrl; // Ini sudah benar sebagai nullable String
+  final String author; // <-- Menggunakan "author" dari Firestore
+  final String
+      formattedPublishDate; // <-- Menggunakan nama yang lebih jelas untuk tanggal publikasi
+  final String? imageUrl;
   final String content;
 
   const ArticleScreen({
     super.key,
     required this.title,
-    required this.authorDate,
-    required this.readTime,
-    this.imageUrl, // <--- Perbaiki: Hapus nilai default seperti = ''
+    required this.author, // <-- required: author
+    required this.formattedPublishDate, // <-- required: tanggal publikasi yang sudah diformat
+    this.imageUrl, // <-- imageUrl tetap nullable, tanpa default value
     required this.content,
   });
 
@@ -42,20 +43,17 @@ class ArticleScreen extends StatelessWidget {
             const SizedBox(height: 8.0),
             Row(
               children: [
+                // Menampilkan Author dan Tanggal Publikasi
                 Text(
-                  authorDate,
+                  '$author • $formattedPublishDate', // Menggabungkan Author dan Tanggal
                   style: const TextStyle(color: Colors.grey),
                 ),
                 const SizedBox(width: 8.0),
                 const Text(
-                  '•',
+                  '•', // Pemisah antara tanggal dan waktu baca
                   style: TextStyle(color: Colors.grey),
                 ),
                 const SizedBox(width: 8.0),
-                Text(
-                  readTime,
-                  style: const TextStyle(color: Colors.grey),
-                ),
               ],
             ),
             const SizedBox(height: 16.0),
@@ -63,25 +61,20 @@ class ArticleScreen extends StatelessWidget {
             Container(
               width: double.infinity,
               height: 200.0,
-              color:
-                  Colors.grey[300], // Placeholder warna abu-abu seperti gambar
+              color: Colors.grey[300], // Placeholder warna abu-abu
               child: Center(
-                // KOREKSI DI SINI: Menggunakan CachedNetworkImage dan penanganan null/empty
+                // Menggunakan CachedNetworkImage untuk caching dan penanganan null/empty
                 child: imageUrl != null && imageUrl!.isNotEmpty
                     ? CachedNetworkImage(
-                        // Gunakan CachedNetworkImage
-                        imageUrl:
-                            imageUrl!, // Gunakan ! karena sudah diperiksa tidak null
+                        imageUrl: imageUrl!,
                         fit: BoxFit.cover,
-                        placeholder: (context, url) => const Center(
-                            child:
-                                CircularProgressIndicator()), // Indikator loading
-                        errorWidget: (context, url, error) => const Center(
-                            child: Icon(Icons
-                                .broken_image)), // Ikon error jika gambar gagal dimuat
+                        placeholder: (context, url) =>
+                            const Center(child: CircularProgressIndicator()),
+                        errorWidget: (context, url, error) =>
+                            const Center(child: Icon(Icons.broken_image)),
                       )
                     : const Text(
-                        '[Gambar Ilustrasi Gizi Anak]'), // Placeholder jika tidak ada URL
+                        '[Gambar Ilustrasi Artikel]'), // Teks placeholder jika tidak ada URL
               ),
             ),
             const SizedBox(height: 16.0),
@@ -90,7 +83,6 @@ class ArticleScreen extends StatelessWidget {
               style: const TextStyle(fontSize: 16.0, height: 1.5),
             ),
             const SizedBox(height: 32.0),
-            // Bagian "Sumber Protein Terbaik" akan menjadi bagian dari konten
           ],
         ),
       ),
