@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:siginas/views/registration_details.dart';
 import 'package:siginas/services/firestore_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AllPendingRegistrationsScreen extends StatefulWidget {
   const AllPendingRegistrationsScreen({super.key});

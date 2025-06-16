@@ -253,9 +253,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 80,
                 height: 80,
                 color: Colors.grey[300],
-                child: imageUrl != null && imageUrl!.isNotEmpty
+                child: imageUrl != null && imageUrl.isNotEmpty
                     ? CachedNetworkImage(
-                        imageUrl: imageUrl!,
+                        imageUrl: imageUrl,
                         fit: BoxFit.cover,
                         placeholder: (context, url) => const Center(
                             child: CircularProgressIndicator(strokeWidth: 2.0)),

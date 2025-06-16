@@ -15,8 +15,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _schoolNameController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _npsnController = TextEditingController();
-  final TextEditingController _totalStudentsController =
-      TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -35,26 +33,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _isLoading = true; // Tampilkan loading
       });
 
-      // Pastikan totalStudents adalah angka valid
-      final int? totalStudents =
-          int.tryParse(_totalStudentsController.text.trim());
-      if (totalStudents == null) {
-        _showSnackBar('Jumlah murid harus berupa angka valid.', isError: true);
-        setState(() {
-          _isLoading = false;
-        });
-        return;
-      }
-
       final String? errorMessage = await _authService.registerUser(
         schoolName: _schoolNameController.text.trim(),
         address: _addressController.text.trim(),
         npsn: _npsnController.text.trim(),
-        totalStudents: totalStudents,
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
+      if (!mounted) return;
       setState(() {
         _isLoading = false; // Sembunyikan loading
       });
@@ -65,7 +52,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           isError: false,
         );
         // Kembali ke halaman login setelah registrasi berhasil
-        // Navigator.pop(context) akan kembali ke halaman sebelumnya (LoginScreen)
         Navigator.pop(context);
       } else {
         _showSnackBar(errorMessage, isError: true);
@@ -88,7 +74,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _schoolNameController.dispose();
     _addressController.dispose();
     _npsnController.dispose();
-    _totalStudentsController.dispose();
+    // HAPUS: Dispose _totalStudentsController
+    // _totalStudentsController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -150,24 +137,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 16.0),
               TextFormField(
-                controller: _totalStudentsController,
-                decoration: const InputDecoration(
-                  labelText: 'Jumlah Murid',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Jumlah murid tidak boleh kosong';
-                  }
-                  if (int.tryParse(value) == null) {
-                    return 'Masukkan angka yang valid';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16.0),
-              TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(
                   labelText: 'Email',
@@ -200,15 +169,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 24.0),
               ElevatedButton(
-                onPressed:
-                    _isLoading ? null : _register, // Disable saat loading
+                onPressed: _isLoading ? null : _register,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16.0),
                   textStyle: const TextStyle(fontSize: 18.0),
                 ),
                 child: _isLoading
-                    ? const CircularProgressIndicator(
-                        color: Colors.white) // Indikator loading
+                    ? const CircularProgressIndicator(color: Colors.white)
                     : const Text('Daftar'),
               ),
               const SizedBox(height: 16.0),
@@ -217,10 +184,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
                   const Text('Sudah punya akun?'),
                   TextButton(
-                    onPressed: _isLoading
-                        ? null
-                        : () =>
-                            Navigator.pop(context), // Kembali ke LoginScreen
+                    onPressed: _isLoading ? null : () => Navigator.pop(context),
                     child: const Text('Masuk'),
                   ),
                 ],

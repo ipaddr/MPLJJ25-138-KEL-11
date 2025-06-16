@@ -197,4 +197,80 @@ class FirestoreService {
       return null;
     });
   }
+
+  // --- Operasi Laporan Admin (Daftar Sekolah Belum Lapor Harian) ---
+  // Mendapatkan stream daftar sekolah yang belum melaporkan hari ini
+  // Filter: role 'school', is_verified true, has_reported_today false
+  Stream<List<Map<String, dynamic>>> streamUnreportedSchoolsToday() {
+    print(
+        'DEBUG (FirestoreService): Streaming unreported schools for today...');
+    return _firestore
+        .collection('users')
+        .where('role', isEqualTo: 'school')
+        .where('is_verified',
+            isEqualTo: true) // Hanya sekolah yang diverifikasi
+        // >>> KOREKSI DI SINI: Gunakan field school_has_completed_daily_report <<<
+        .where('school_has_completed_daily_report',
+            isEqualTo: false) // Belum lapor semua siswa
+        // >>> Tambahkan orderBy jika Anda ingin mengurutkan hasilnya <<<
+        // .orderBy('nama_sekolah')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => {
+                  ...doc.data(),
+                  'uid': doc.id // Sertakan UID dokumen
+                })
+            .toList());
+  }
+
+  // --- Operasi Laporan Admin (Filter Tabel Sekolah) ---
+  // Mendapatkan stream daftar sekolah berdasarkan filter
+  Stream<List<Map<String, dynamic>>> streamFilteredSchools({
+    String? provinsi,
+    String? kota,
+    String? jenjang,
+    // DateTime? tanggal, // Jika nanti ingin filter berdasarkan laporan pada tanggal tertentu
+  }) {
+    Query query = _firestore.collection('users'); // Mulai dari koleksi users
+
+    // Filter berdasarkan role 'school' dan sudah diverifikasi
+    query = query
+        .where('role', isEqualTo: 'school')
+        .where('is_verified', isEqualTo: true);
+
+    if (provinsi != null && provinsi.isNotEmpty) {
+      query = query.where('provinsi', isEqualTo: provinsi);
+    }
+    if (kota != null && kota.isNotEmpty) {
+      query = query.where('kota', isEqualTo: kota);
+    }
+    if (jenjang != null && jenjang.isNotEmpty) {
+      query = query.where('jenjang', isEqualTo: jenjang);
+    }
+    // Jika ingin filter berdasarkan tanggal laporan, ini akan lebih kompleks
+    // karena melibatkan subkoleksi daily_reports dan mungkin Cloud Functions.
+
+    print(
+        'DEBUG (FirestoreService): Streaming filtered schools with: Provinsi: $provinsi, Kota: $kota, Jenjang: $jenjang');
+
+    return query.snapshots().map((snapshot) => snapshot.docs
+        .map((doc) {
+          final data = doc.data()
+              as Map<String, dynamic>?; // Ambil data sebagai Map nullable
+
+          if (data == null) {
+            return <String,
+                dynamic>{}; // Kembalikan map kosong dengan tipe eksplisit
+          }
+
+          // KOREKSI UTAMA DI SINI: Pastikan map yang dikembalikan bertipe Map<String, dynamic>
+          return {
+            ...data, // Gunakan spread operator yang aman
+            'uid': doc.id // Tambahkan UID dokumen
+          } as Map<String,
+              dynamic>; // <<< Lakukan cast eksplisit untuk map yang dihasilkan
+        })
+        .where((data) => data.isNotEmpty)
+        .toList()); // Filter out empty maps if any
+  }
 }

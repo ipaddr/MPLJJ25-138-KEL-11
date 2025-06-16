@@ -1,4 +1,4 @@
-// lib/services/auth_service.dart (Pastikan ini adalah versi terbaru yang Anda miliki)
+// lib/services/auth_service.dart
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -18,7 +18,8 @@ class AuthService {
     required String schoolName,
     required String address,
     required String npsn,
-    required int totalStudents,
+    // HAPUS parameter totalStudents dari sini karena akan diinisialisasi ke 0
+    // required int totalStudents,
     required String email,
     required String password,
   }) async {
@@ -48,13 +49,17 @@ class AuthService {
         'nama_sekolah': schoolName,
         'alamat': address,
         'npsn': npsn,
-        'jumlah_siswa': totalStudents,
+        'jumlah_siswa': 0, // <<< DISET KE 0 SECARA DEFAULT SAAT REGISTRASI
         'email': email,
         'role': 'school',
         'is_verified': false,
         'created_at': FieldValue.serverTimestamp(),
         'updated_at': FieldValue.serverTimestamp(),
         'profile_image_url': null,
+        // <<< TAMBAHKAN FIELD-FIELD INI UNTUK STATUS LAPORAN AWAL >>>
+        'reported_students_today': 0,
+        'school_has_completed_daily_report': false,
+        // 'last_daily_report_submitted_at': null, // Opsional: jika perlu timestamp awal
       });
 
       print('DEBUG (AuthService): Dokumen pengguna Firestore berhasil dibuat.');
@@ -75,7 +80,7 @@ class AuthService {
           return 'Terjadi kesalahan autentikasi: ${e.message}. Kode: ${e.code}';
       }
     } catch (e) {
-      print('DEBUG (AuthService): Registrasi GAGAL (Error Umum). Error: $e');
+      print('DEBUG (AuthService): Terjadi kesalahan tidak terduga: $e');
       return 'Terjadi kesalahan tidak terduga: $e';
     }
   }
@@ -136,12 +141,11 @@ class AuthService {
   Future<String?> getUserRole(String uid) async {
     print('DEBUG (AuthService): Mengambil role untuk UID: $uid');
     try {
-      // Menambahkan timeout untuk mendeteksi jika pengambilan data Firestore terlalu lama
       DocumentSnapshot userDoc = await _firestore
           .collection('users')
           .doc(uid)
           .get()
-          .timeout(const Duration(seconds: 10)); // Timeout 10 detik
+          .timeout(const Duration(seconds: 10));
 
       if (userDoc.exists) {
         final role = userDoc.get('role') as String?;
@@ -150,7 +154,7 @@ class AuthService {
       }
       print(
           'DEBUG (AuthService): Dokumen pengguna TIDAK ditemukan untuk UID: $uid');
-      return null; // Dokumen pengguna tidak ditemukan
+      return null;
     } on FirebaseException catch (e) {
       print(
           'DEBUG (AuthService): FirebaseException saat mengambil role: ${e.code} - ${e.message}');
@@ -162,7 +166,6 @@ class AuthService {
   }
 
   // --- Fungsi untuk Mendapatkan Detail Pengguna dari Firestore ---
-  // Fungsi ini juga bisa dipanggil oleh FirestoreService, tapi tetap berguna di sini
   Future<Map<String, dynamic>?> getUserDetails(String uid) async {
     print('DEBUG (AuthService): Mengambil detail pengguna untuk UID: $uid');
     try {
