@@ -15,12 +15,14 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
   late final GenerativeModel _model;
   late final ChatSession _chat;
 
+  bool _isLoading = false;
+
   @override
   void initState() {
     super.initState();
     _model = GenerativeModel(
-      model: 'gemini-pro',
-      apiKey: 'YOUR_API_KEY', // Ganti dengan API Key kamu
+      model: 'gemini-1.5-flash', // ✅ Gunakan model yang valid
+      apiKey: 'AIzaSyCczypulZKnwl6MAI3x87nIb18BRuyBG0U', // Ganti dengan API key-mu
     );
     _chat = _model.startChat();
   }
@@ -32,20 +34,31 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
     setState(() {
       _messages.add({'role': 'user', 'text': input});
       _controller.clear();
+      _isLoading = true;
     });
 
-    final response = await _chat.sendMessage(Content.text(input));
-    final output = response.text;
+    try {
+      final response = await _chat.sendMessage(Content.text(input));
+      final output = response.text ?? 'Tidak ada balasan dari Gemini.';
 
-    setState(() {
-      _messages.add({'role': 'bot', 'text': output ?? 'Tidak ada jawaban.'});
-    });
+      setState(() {
+        _messages.add({'role': 'bot', 'text': output});
+      });
+    } catch (e) {
+      setState(() {
+        _messages.add({'role': 'bot', 'text': '❌ Error: $e'});
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('NutriBot')),
+      appBar: AppBar(title: const Text('NutriBot')),
       body: Column(
         children: [
           Expanded(
@@ -71,6 +84,11 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
               },
             ),
           ),
+          if (_isLoading)
+            const Padding(
+              padding: EdgeInsets.all(8),
+              child: CircularProgressIndicator(),
+            ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             child: Row(
@@ -86,7 +104,7 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.send),
-                  onPressed: _sendMessage,
+                  onPressed: _isLoading ? null : _sendMessage,
                 ),
               ],
             ),
