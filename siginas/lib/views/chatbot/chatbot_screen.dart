@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
+import 'package:cloud_firestore/cloud_firestore.dart'; // Import Cloud Firestore
 
 class ChatBotScreen extends StatefulWidget {
   const ChatBotScreen({super.key});
@@ -16,15 +18,56 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
   late final ChatSession _chat;
 
   bool _isLoading = false;
+  String? _userRole; // Variabel untuk menyimpan peran pengguna
+  String? _userName; // Variabel untuk menyimpan nama pengguna
+
+  // Instances Firebase
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
     super.initState();
+    // Inisialisasi model Gemini.
     _model = GenerativeModel(
       model: 'gemini-1.5-flash', // ✅ Gunakan model yang valid
       apiKey: 'AIzaSyCczypulZKnwl6MAI3x87nIb18BRuyBG0U', // Ganti dengan API key-mu
     );
     _chat = _model.startChat();
+
+    // Ambil peran dan nama pengguna, lalu tambahkan pesan selamat datang
+    _fetchUserRoleAndName();
+  }
+
+  // Fungsi untuk mengambil peran dan nama pengguna dari Firestore
+  Future<void> _fetchUserRoleAndName() async {
+    User? currentUser = _auth.currentUser;
+    String fetchedUserName = 'Pengguna'; // Nama default jika tidak ditemukan
+    String fetchedUserRole = 'Tamu'; // Peran default jika tidak ditemukan
+
+    if (currentUser != null) {
+      try {
+        DocumentSnapshot userDoc = await _firestore.collection('users').doc(currentUser.uid).get();
+        if (userDoc.exists && userDoc.data() != null) {
+          fetchedUserName = (userDoc.data() as Map<String, dynamic>)['name'] ?? currentUser.email ?? 'Pengguna';
+          fetchedUserRole = (userDoc.data() as Map<String, dynamic>)['role'] ?? 'Tidak Diketahui';
+        } else {
+          fetchedUserName = currentUser.email ?? 'Pengguna'; // Fallback ke email jika dokumen tidak ada
+          fetchedUserRole = "Tidak Diketahui";
+        }
+      } catch (e) {
+        print("Error fetching user data: $e");
+        fetchedUserName = currentUser.email ?? 'Pengguna'; // Fallback ke email jika error
+        fetchedUserRole = "Tidak Diketahui";
+      }
+    }
+
+    setState(() {
+      _userName = fetchedUserName;
+      _userRole = fetchedUserRole;
+      // Tambahkan pesan selamat datang dari chatbot setelah data pengguna diambil
+      _messages.insert(0, {'role': 'bot', 'text': 'Halo, $_userName! Apakah ada yang bisa saya bantu?'});
+    });
   }
 
   Future<void> _sendMessage() async {
@@ -34,7 +77,7 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
     setState(() {
       _messages.add({'role': 'user', 'text': input});
       _controller.clear();
-      _isLoading = true;
+      _isLoading = true; // Aktifkan indikator loading
     });
 
     try {
@@ -50,7 +93,7 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
       });
     } finally {
       setState(() {
-        _isLoading = false;
+        _isLoading = false; // Matikan indikator loading
       });
     }
   }
@@ -58,7 +101,14 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('NutriBot')),
+      appBar: AppBar(
+        title: const Text(
+          'Chatbot', // Hanya judul "Chatbot" di AppBar
+          style: TextStyle(color: Colors.white), // Warna teks putih
+        ),
+        backgroundColor: Colors.blueAccent, // Warna latar belakang AppBar
+        iconTheme: const IconThemeData(color: Colors.white), // Warna ikon (misal: tombol kembali)
+      ),
       body: Column(
         children: [
           Expanded(
@@ -84,7 +134,7 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
               },
             ),
           ),
-          if (_isLoading)
+          if (_isLoading) // Tampilkan indikator loading jika _isLoading true
             const Padding(
               padding: EdgeInsets.all(8),
               child: CircularProgressIndicator(),
@@ -96,6 +146,7 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
+                    onSubmitted: (value) => _sendMessage(), // Panggil _sendMessage saat Enter ditekan
                     decoration: const InputDecoration(
                       hintText: 'Ketik pesan...',
                       border: OutlineInputBorder(),
@@ -104,7 +155,7 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.send),
-                  onPressed: _isLoading ? null : _sendMessage,
+                  onPressed: _isLoading ? null : _sendMessage, // Nonaktifkan tombol saat loading
                 ),
               ],
             ),
